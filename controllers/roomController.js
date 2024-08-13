@@ -7,13 +7,33 @@ const { encrypt, decrypt } = require('../utils/encryption');
  *
  * @return {string} The randomly generated room code.
  */
-function generateRoomCode() {
-    let roomCode = '';
+async function generateRoomCode() {
+    let roomCode;
+    let roomExists;
     const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    for (let i = 0; i < 20; i++) {
-        roomCode += characters.charAt(Math.floor(Math.random() * characters.length));
-    }
+
+    do {
+      roomCode = '';
+
+      for (let i = 0; i < 20; i++) {
+          roomCode += characters.charAt(Math.floor(Math.random() * characters.length));
+      }
+
+      roomExists = await isRoomExists(roomCode);
+    } while (roomExists);
+
     return roomCode;
+}
+
+/**
+ * Checks roomId's existence.
+ * 
+ * @param {string} roomId 
+ * @returns {boolean}
+ */
+async function isRoomExists(roomId) {
+    const result = await db.get(`room.${roomId}`);
+    return result ? true : false;
 }
 
 /**
@@ -25,7 +45,7 @@ function generateRoomCode() {
  */
 exports.createRoom = async (req, res) => {
     try {
-        const roomId = generateRoomCode();
+        const roomId = await generateRoomCode();
         const { userId } = req.body;
 
         const roomData = await db.get(`rooms.${roomId}`);
